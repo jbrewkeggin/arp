@@ -106,6 +106,23 @@ func (c *Client) Request(ip netip.Addr) error {
 	return c.WriteTo(arp, ethernet.Broadcast)
 }
 
+// PassthroughRequest sends an ARP request, asking for the hardware address
+// associated with an IPv4 address. This type of request allows the API caller to pass in the sender IP and HW,
+// essentially tunneling the request from a remote client.  The response, if any, can be read with the Read method.
+//
+// Unlike Resolve, which provides an easier interface for getting the
+// hardware address, Request allows sending many requests in a row,
+// retrieving the responses afterwards.
+func (c *Client) PassthroughRequest(srcHW net.HardwareAddr, srcIP netip.Addr, ip netip.Addr) error {
+	// Create ARP packet for broadcast address to attempt to find the
+	// hardware address of the input IP address
+	arp, err := NewPacket(OperationRequest, srcHW, srcIP, ethernet.Broadcast, ip)
+	if err != nil {
+		return err
+	}
+	return c.WriteTo(arp, ethernet.Broadcast)
+}
+
 // Resolve performs an ARP request, attempting to retrieve the
 // hardware address of a machine using its IPv4 address. Resolve must not
 // be used concurrently with Read. If you're using Read (usually in a
